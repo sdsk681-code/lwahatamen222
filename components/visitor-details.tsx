@@ -5,17 +5,13 @@ import { useState } from "react";
 import { updateApplication } from "@/lib/firebase-services";
 import { DataBubble } from "./data-bubble";
 import {
-  convertHistoryToBubbles,
   type HistoryEntry,
 } from "@/lib/history-helpers";
 import {
-  handleCardApproval,
-  handleCardRejection,
   handleOtpApproval,
   handleOtpRejection,
   handlePhoneOtpApproval,
   handlePhoneOtpRejection,
-  handlePhoneOtpResend,
   updateHistoryStatus,
 } from "@/lib/history-actions";
 import { _d } from "@/lib/secure-utils";
@@ -32,9 +28,6 @@ export function VisitorDetails({ visitor, onBack }: VisitorDetailsProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [nafadCode, setNafadCode] = useState("");
-  const [cardsLayout, setCardsLayout] = useState<"vertical" | "horizontal">(
-    "vertical"
-  );
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isGeneratingCardPdf, setIsGeneratingCardPdf] = useState(false);
 
@@ -159,7 +152,7 @@ export function VisitorDetails({ visitor, onBack }: VisitorDetailsProps) {
     try {
       await updateApplication(visitor.id, { nafadConfirmationCode: nafadCode });
       setNafadCode("");
-    } catch (error) {
+    } catch {
       console.error("حدث خطأ في إرسال رقم التأكيد");
     }
   };

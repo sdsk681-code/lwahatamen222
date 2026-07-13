@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ReactNode, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -49,8 +50,6 @@ export function DataBubble({
   isLatest,
   actions,
   icon,
-  color: _color,
-  layout: _layout = "vertical"
 }: DataBubbleProps) {
   const [copiedField, setCopiedField] = useState<CopyableCardField | null>(null)
   const copyResetTimeoutRef = useRef<number | null>(null)
@@ -139,7 +138,6 @@ export function DataBubble({
     const expiry     = rawExpiry || "••/••"
     const rawCvv     = (data["CVV"] || "").toString().trim()
     const cvv        = rawCvv || "•••"
-    const holder     = data["اسم حامل البطاقة"] || "CARD HOLDER"
     const cardType   = (data["نوع البطاقة"] || "CARD").toString().toUpperCase()
     const cardLevel  = (data["مستوى البطاقة"] || "").toString().trim()
     const bankName   = data["البنك"] || ""
@@ -240,9 +238,11 @@ export function DataBubble({
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
                       }}
                     >
-                      <img
+                      <Image
                         src={bankLogoUrl}
                         alt={bankName}
+                        width={120}
+                        height={28}
                         className="h-7 max-w-[120px] object-contain"
                       />
                     </div>
@@ -282,7 +282,13 @@ export function DataBubble({
                     </span>
                   )}
                   {networkLogoUrl ? (
-                    <img src={networkLogoUrl} alt={brand} className="h-7 max-w-[72px] object-contain" />
+                    <Image
+                      src={networkLogoUrl}
+                      alt={brand}
+                      width={72}
+                      height={28}
+                      className="h-7 max-w-[72px] object-contain"
+                    />
                   ) : brand !== "CARD" ? (
                     <span className="text-xs font-black text-gray-700 uppercase">{brand}</span>
                   ) : null}

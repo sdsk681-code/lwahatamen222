@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { User, onAuthStateChanged } from "firebase/auth"
 import { auth } from "./firebase"
 import { useRouter } from "next/navigation"
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const startSession = async (firebaseUser: User) => {
+  const startSession = useCallback(async (firebaseUser: User) => {
     const existing = localStorage.getItem(SESSION_STORAGE_KEY)
     const sid = existing || generateSessionId()
     localStorage.setItem(SESSION_STORAGE_KEY, sid)
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await auth.signOut()
       router.push("/login")
     })
-  }
+  }, [router])
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribeAuth()
       cleanupSession()
     }
-  }, [])
+  }, [startSession])
 
   const logout = async () => {
     try {

@@ -180,21 +180,21 @@ function BlockButton({ visitor }: { visitor: InsuranceApplication }) {
   );
 }
 
-export function VisitorSidebar({
-  visitors,
-  selectedVisitor,
-  onSelectVisitor,
-  searchQuery,
-  onSearchChange,
-  cardFilter,
-  onCardFilterChange,
-  selectedIds,
-  onToggleSelect,
-  onSelectAll,
-  onDeleteSelected,
-  sidebarWidth,
-  onSidebarWidthChange,
-}: VisitorSidebarProps) {
+export function VisitorSidebar(props: VisitorSidebarProps) {
+  const {
+    visitors,
+    selectedVisitor,
+    onSelectVisitor,
+    searchQuery,
+    onSearchChange,
+    cardFilter,
+    onCardFilterChange,
+    selectedIds,
+    onToggleSelect,
+    onSelectAll,
+    onDeleteSelected,
+    sidebarWidth,
+  } = props;
   const allSelected =
     visitors.length > 0 && selectedIds.size === visitors.length;
   const unreadCount = visitors.filter((visitor) => visitor.isUnread).length;

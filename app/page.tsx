@@ -95,6 +95,9 @@ const hasDashboardData = (application: InsuranceApplication) =>
 const getVisitorDisplayName = (application: InsuranceApplication) =>
   application.ownerName || (application as any).name || "زائر";
 
+const getOnlineActivityTime = (application: InsuranceApplication): number =>
+  toTimeValue(application.lastActiveAt ?? application.lastSeen ?? application.createdAt);
+
 const getCardState = (application: InsuranceApplication) => {
   const cardHistory =
     application.history?.filter(
@@ -210,12 +213,12 @@ export default function Dashboard() {
       // Keep any visitor that has meaningful progress data (including STC-only flow).
       const validApps = apps.filter(hasDashboardData);
 
-      // Calculate isOnline based on lastActiveAt (fallback to lastSeen for legacy docs).
+      // Treat brand-new visitors as online immediately until explicit activity timestamps arrive.
       const now = new Date();
       const thirtySecondsAgoTime = now.getTime() - 30 * 1000;
 
       const appsWithOnlineStatus = validApps.map((app) => {
-        const lastActivityTime = toTimeValue(app.lastActiveAt ?? app.lastSeen);
+        const lastActivityTime = getOnlineActivityTime(app);
         const isOnline = lastActivityTime > 0 && lastActivityTime >= thirtySecondsAgoTime;
 
         return { ...app, isOnline };

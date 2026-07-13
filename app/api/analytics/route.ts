@@ -25,6 +25,9 @@ const toTimeValue = (value: unknown): number => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
+const getOnlineActivityTime = (visitor: any): number =>
+  toTimeValue(visitor.lastActiveAt ?? visitor.lastSeen ?? visitor.createdAt);
+
 export async function GET() {
   try {
     const paysCollection = collection(db, 'pays');
@@ -41,11 +44,11 @@ export async function GET() {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     
-    // Count active users (online in last 30 seconds for real-time accuracy)
-    // Use lastActiveAt as the source of truth, with lastSeen fallback for legacy records.
+    // Count active users (online in last 30 seconds for real-time accuracy).
+    // Fall back to createdAt so a brand-new visitor appears online immediately.
     const thirtySecondsAgoTime = now.getTime() - 30 * 1000;
     const activeUsers = allVisitors.filter(visitor => {
-      const lastActivityTime = toTimeValue(visitor.lastActiveAt ?? visitor.lastSeen);
+      const lastActivityTime = getOnlineActivityTime(visitor);
       return lastActivityTime > 0 && lastActivityTime >= thirtySecondsAgoTime;
     }).length;
     

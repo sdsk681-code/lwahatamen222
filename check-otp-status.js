@@ -2,12 +2,12 @@ const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs } = require('firebase/firestore');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAYAW8RdVEskTzozA6Jp9GDR0T4v3JhzDU",
-  authDomain: "bcare-v2-app.firebaseapp.com",
-  projectId: "bcare-v2-app",
-  storageBucket: "bcare-v2-app.firebasestorage.app",
-  messagingSenderId: "610570825864",
-  appId: "1:610570825864:web:ffe63cc2f2b95ad690ef3d"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
