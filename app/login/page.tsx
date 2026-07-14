@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { FirebaseError } from "firebase/app";
 import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
@@ -16,6 +17,36 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
 import { getAllowedAdminEmail, isAllowedAdminEmail } from "@/lib/allowed-admin-email";
+
+const getFriendlyAuthError = (error: unknown) => {
+  if (error instanceof FirebaseError) {
+    switch (error.code) {
+      case "auth/invalid-api-key":
+        return "إعداد Firebase Authentication غير صالح. تحقق من مفتاح Firebase API ومن تفعيل خدمة Authentication."
+      case "auth/operation-not-allowed":
+        return "تسجيل الدخول عبر رابط البريد غير مفعل في Firebase Authentication."
+      case "auth/unauthorized-continue-uri":
+      case "auth/invalid-continue-uri":
+        return "رابط الموقع غير مصرح به في Firebase. أضف دومين Netlify ضمن Authorized domains."
+      case "auth/quota-exceeded":
+        return "تم تجاوز الحد المسموح لإرسال روابط الدخول. حاول لاحقًا."
+      case "auth/network-request-failed":
+        return "فشل الاتصال أثناء إرسال الرابط. تحقق من الشبكة ثم أعد المحاولة."
+      default:
+        return `فشل إرسال رابط الدخول: ${error.code}`
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    if (error.message.includes("API key not valid")) {
+      return "Firebase Authentication يرفض المفتاح الحالي. تحقق من API key أو من تفعيل خدمة Authentication."
+    }
+
+    return `فشل إرسال رابط الدخول: ${error.message}`
+  }
+
+  return "حدث خطأ أثناء إرسال الرابط. يرجى المحاولة لاحقاً."
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -63,8 +94,9 @@ export default function LoginPage() {
       window.localStorage.setItem("emailForSignIn", normalizedEmail);
       setSent(true);
       setMessage("تم إرسال رابط تسجيل الدخول. يرجى التحقق من بريدك الإلكتروني.");
-    } catch {
-      setError("حدث خطأ أثناء إرسال الرابط. يرجى المحاولة لاحقاً.");
+    } catch (error) {
+      console.error("Failed to send sign-in link:", error);
+      setError(getFriendlyAuthError(error));
     } finally {
       setLoading(false);
     }
