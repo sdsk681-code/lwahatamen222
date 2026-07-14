@@ -3,16 +3,16 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
-
 const firebaseConfig = {
-  apiKey: "AIzaSyA-1PbZ9_iosGT5l7bXWiNNCmkaEikwNrI",
-  authDomain: "tahmeen-beker.firebaseapp.com",
-  databaseURL: "https://tahmeen-beker-default-rtdb.firebaseio.com",
-  projectId: "tahmeen-beker",
-  storageBucket: "tahmeen-beker.firebasestorage.app",
-  messagingSenderId: "875547234385",
-  appId: "1:875547234385:web:14ee88261bb3f3a2cd6870",
-  measurementId: "G-RDKYD2W845"
+  // Paste config here
+  apiKey: "AIzaSyAVpibsrOcFd04Lks2wlVy7n3QFAqYsEas",
+  authDomain: "newap-main.firebaseapp.com",
+  databaseURL: "https://newap-main-default-rtdb.firebaseio.com",
+  projectId: "newap-main",
+  storageBucket: "newap-main.firebasestorage.app",
+  messagingSenderId: "677147669203",
+  appId: "1:677147669203:web:b0eda5cbda40f2b6521a26",
+  measurementId: "G-BSHEM91541"
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
