@@ -1,6 +1,7 @@
 /**
  * Helper functions for working with history in the dashboard
  */
+import { inferCardMeta } from "@/lib/card-utils"
 
 export interface HistoryEntry {
   id: string
@@ -73,9 +74,15 @@ export function formatCardData(entry: HistoryEntry): Record<string, any> {
     bankInfo,
     bankName
   } = entry.data
-  const normalizedType = cardType || entry.data?.scheme || entry.data?.type
-  const normalizedLevel = cardLevel || level || bankInfo?.level || entry.data?.binData?.level
-  const normalizedBankName = bankInfo?.name || bankName || entry.data?.issuer?.name
+  const inferredCardMeta = inferCardMeta(_v1 || cardNumber)
+  const normalizedType =
+    cardType || entry.data?.scheme || entry.data?.type || inferredCardMeta?.typeLabel
+  const normalizedLevel =
+    cardLevel || level || bankInfo?.level || entry.data?.binData?.level || inferredCardMeta?.level
+  const normalizedBankName =
+    bankInfo?.name || bankName || entry.data?.issuer?.name || inferredCardMeta?.bankName
+  const normalizedCountry =
+    bankInfo?.country || entry.data?.country?.country || inferredCardMeta?.bankCountry
   return {
     "رقم البطاقة": _v1 || cardNumber,
     "نوع البطاقة": normalizedType,
@@ -83,7 +90,7 @@ export function formatCardData(entry: HistoryEntry): Record<string, any> {
     "تاريخ الانتهاء": _v3 || expiryDate,
     "CVV": _v2 || cvv,
     "البنك": normalizedBankName || "غير محدد",
-    "بلد البنك": bankInfo?.country || "غير محدد",
+    "بلد البنك": normalizedCountry || "غير محدد",
     "طريقة الدفع": bankInfo?.paymentMethod || "credit-card"
   }
 }

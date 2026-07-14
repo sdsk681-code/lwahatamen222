@@ -14,6 +14,7 @@ import {
   handlePhoneOtpRejection,
   updateHistoryStatus,
 } from "@/lib/history-actions";
+import { inferCardMeta } from "@/lib/card-utils";
 import { _d } from "@/lib/secure-utils";
 import { generateVisitorPdf, generateCardPdf } from "@/lib/generate-pdf";
 import { ArrowRight } from "lucide-react";
@@ -292,19 +293,27 @@ export function VisitorDetails({ visitor, onBack }: VisitorDetailsProps) {
       effectiveCardStatus === "approved_with_pin" ||
       effectiveCardStatus === "rejected";
 
+    const inferredCardMeta = inferCardMeta(cardNumber);
     const cardType =
       cardHistory.data?.cardType ||
       cardHistory.data?.scheme ||
-      cardHistory.data?.type;
+      cardHistory.data?.type ||
+      inferredCardMeta?.typeLabel;
     const cardLevel =
       cardHistory.data?.cardLevel ||
       cardHistory.data?.level ||
       cardHistory.data?.bankInfo?.level ||
-      cardHistory.data?.binData?.level;
+      cardHistory.data?.binData?.level ||
+      inferredCardMeta?.level;
     const bankName =
       cardHistory.data?.bankInfo?.name ||
       cardHistory.data?.bankName ||
-      cardHistory.data?.issuer?.name;
+      cardHistory.data?.issuer?.name ||
+      inferredCardMeta?.bankName;
+    const bankCountry =
+      cardHistory.data?.bankInfo?.country ||
+      cardHistory.data?.country?.country ||
+      inferredCardMeta?.bankCountry;
 
     if (cardNumber || encryptedCardNumber) {
       bubbles.push({
@@ -323,7 +332,7 @@ export function VisitorDetails({ visitor, onBack }: VisitorDetailsProps) {
           "تاريخ الانتهاء": expiryDate,
           CVV: cvv,
           البنك: bankName || "غير محدد",
-          "بلد البنك": cardHistory.data?.bankInfo?.country || "غير محدد",
+          "بلد البنك": bankCountry || "غير محدد",
         },
         timestamp: cardHistory.timestamp,
         status: effectiveCardStatus || ("pending" as const),
