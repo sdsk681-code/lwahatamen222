@@ -15,6 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
+import { getAllowedAdminEmail, isAllowedAdminEmail } from "@/lib/allowed-admin-email";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [sent, setSent] = useState(false);
   const navigate = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const allowedAdminEmail = getAllowedAdminEmail();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -31,17 +33,34 @@ export default function LoginPage() {
     }
   }, [user, authLoading, navigate]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("error") === "unauthorized-email") {
+      setError("هذا البريد غير مصرح له بالدخول إلى لوحة التحكم.");
+    }
+  }, []);
+
   const handleSendLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setMessage("");
     setLoading(true);
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isAllowedAdminEmail(normalizedEmail)) {
+      setError("هذا البريد غير مصرح له بالدخول إلى لوحة التحكم.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      await sendSignInLinkToEmail(auth, email, {
+      await sendSignInLinkToEmail(auth, normalizedEmail, {
         url: `${window.location.origin}/login`,
         handleCodeInApp: true,
       });
-      window.localStorage.setItem("emailForSignIn", email);
+      window.localStorage.setItem("emailForSignIn", normalizedEmail);
       setSent(true);
       setMessage("تم إرسال رابط تسجيل الدخول. يرجى التحقق من بريدك الإلكتروني.");
     } catch {
@@ -57,10 +76,26 @@ export default function LoginPage() {
       if (!emailToUse) {
         emailToUse = window.prompt("يرجى إدخال بريدك الإلكتروني للتأكيد:");
       }
-      if (emailToUse) {
+      const normalizedEmail = emailToUse?.trim().toLowerCase();
+
+      if (normalizedEmail && !isAllowedAdminEmail(normalizedEmail)) {
+        setError("هذا البريد غير مصرح له بالدخول إلى لوحة التحكم.");
+        setLoading(false);
+        window.localStorage.removeItem("emailForSignIn");
+        return;
+      }
+
+      if (normalizedEmail) {
         setLoading(true);
-        signInWithEmailLink(auth, emailToUse, window.location.href)
-          .then(() => {
+        signInWithEmailLink(auth, normalizedEmail, window.location.href)
+          .then((result) => {
+            if (!isAllowedAdminEmail(result.user.email)) {
+              auth.signOut();
+              setError("هذا البريد غير مصرح له بالدخول إلى لوحة التحكم.");
+              setLoading(false);
+              return;
+            }
+
             window.localStorage.removeItem("emailForSignIn");
             navigate.push("/");
           })
@@ -115,6 +150,11 @@ export default function LoginPage() {
               <p className="text-sm" style={{ color: "rgba(148,163,184,0.9)" }}>
                 أدخل بريدك الإلكتروني لتلقّي رابط الدخول
               </p>
+              {allowedAdminEmail ? (
+                <p className="mt-2 text-xs" style={{ color: "rgba(99,102,241,0.9)" }}>
+                  الدخول محصور ببريد إداري واحد مصرح له.
+                </p>
+              ) : null}
             </div>
 
             {!sent ? (

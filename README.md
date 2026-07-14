@@ -19,6 +19,7 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=
+NEXT_PUBLIC_ALLOWED_ADMIN_EMAIL=
 ```
 
 3. Restart the dev server after editing env values:
@@ -28,6 +29,8 @@ npm run dev
 ```
 
 `NEXT_PUBLIC_*` variables are exposed to the browser by Next.js, so they must use that prefix for Firebase client-side setup.
+
+Set `NEXT_PUBLIC_ALLOWED_ADMIN_EMAIL` when you want the dashboard login to accept one email address only.
 
 ## Getting Started
 

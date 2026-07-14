@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { User, onAuthStateChanged } from "firebase/auth"
 import { auth } from "./firebase"
 import { useRouter } from "next/navigation"
+import { isAllowedAdminEmail } from "./allowed-admin-email"
 import {
   generateSessionId,
   registerSession,
@@ -76,6 +77,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        if (!isAllowedAdminEmail(firebaseUser.email)) {
+          cleanupSession()
+          localStorage.removeItem(SESSION_STORAGE_KEY)
+          currentSessionIdRef.current = null
+          setSessionId(null)
+          setUser(null)
+          setLoading(false)
+          await auth.signOut()
+          router.replace("/login?error=unauthorized-email")
+          return
+        }
+
         setUser(firebaseUser)
         setLoading(false)
         await startSession(firebaseUser)
@@ -92,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribeAuth()
       cleanupSession()
     }
-  }, [startSession])
+  }, [router, startSession])
 
   const logout = async () => {
     try {
