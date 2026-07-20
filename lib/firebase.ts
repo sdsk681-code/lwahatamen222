@@ -5,6 +5,7 @@ import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
   // Paste config here
+  apiKey: "AIzaSyCjp5AYtbd-8O9XbcXrN0IBN7AA6ePNCNY",
   authDomain: "tahmeen-s.firebaseapp.com",
   databaseURL: "https://tahmeen-s-default-rtdb.firebaseio.com",
   projectId: "tahmeen-s",
